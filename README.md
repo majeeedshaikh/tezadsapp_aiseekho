@@ -24,37 +24,49 @@ TezAds introduces a **Multi-Agent Orchestration Pipeline**. Instead of displayin
 
 ---
 
-## ⚙️ Architectural Overview
-TezAds uses a **Zero-Backend Serverless Architecture** that runs entirely on the device.
+## ⚙️ Architectural Overview & Technical Deep Dive
+TezAds uses a **Zero-Backend Serverless Architecture** that runs entirely on the device. By eliminating middleware, we achieve near-instantaneous execution loops between the user and the underlying LLM.
 
-*   **Frontend UI/UX**: Flutter (Dart) utilizing a highly premium, glowing glassmorphic "Apple-level" aesthetic. Uses `BackdropFilter` for frosted glass elements and custom radial glow physics.
-*   **State Management**: `flutter_riverpod` combined with `GoRouter`. This ensures that complex asynchronous agent streams trigger isolated UI re-renders without blocking the user.
-*   **Local Reactive Database (Hive)**: Uses `hive_flutter` as a lightweight NoSQL store to cache agent states, campaign metrics, and user preferences. Provides instant reactive state updates.
-*   **Concurrency**: Uses **Flutter Isolates** to parse large CSV mock datasets in background threads, ensuring the 60fps/120fps UI never drops a frame.
+### 1. Frontend UI/UX (Flutter & Glassmorphism)
+*   **Aesthetic Engine**: Developed using a highly premium, glowing glassmorphic "Apple-level" aesthetic. We utilize native `BackdropFilter` combined with `ImageFilter.blur(sigmaX: 20.0, sigmaY: 20.0)` for realistic frosted glass components.
+*   **Dynamic Layouts**: Features auto-expanding Gemini-style prompt input fields (`minLines`, `maxLines` bounded scaling) and dynamically wrapped flex boxes (`Expanded`, `Flexible`) to guarantee pixel-perfect responsiveness across all screen sizes without overflow.
+*   **Animation Physics**: Uses custom `TweenAnimationBuilder` and implicit animations to handle complex transitions, such as the glowing agent containers and real-time streaming typewriter terminal text during the agentic reasoning phase.
+
+### 2. State Management (Riverpod + GoRouter)
+*   **Asynchronous Orchestration**: We utilize `flutter_riverpod` (`AsyncNotifierProvider`) to manage the highly complex, multi-stage asynchronous agent execution. 
+*   **State Machine Lifecycle**: The Riverpod controller (`AgentWorkflowController`) handles discrete state mutations (`isProcessing`, `isCompleted`, `currentTask`, `logs`) and broadcasts them to the UI, guaranteeing that complex asynchronous streams trigger isolated UI re-renders without blocking user interactions.
+*   **Type-Safe Routing**: Managed by `go_router` for deep linking and declarative navigation between the Ingestion Hub, Agent Trace, and Action Hub blueprints.
+
+### 3. Concurrency (Flutter Isolates)
+*   **Background Ingestion**: Mobile devices can freeze if the main thread parses massive files. TezAds utilizes **Flutter Isolates** (`compute()` function) to parse large CSV mock datasets in entirely isolated background threads. This ensures the 120fps UI never drops a frame, even when ingesting tens of thousands of rows of telemetry data.
+
+### 4. Local Reactive Database (Hive NoSQL)
+*   **Persistence**: Uses `hive_flutter` as an ultra-fast, lightweight NoSQL key-value store.
+*   **Reactive UI Binding**: We cache agent states, campaign metrics, and execution history here. Because Hive allows synchronous reading, we achieve instant UI state hydration on boot.
 
 ---
 
 ## 🤖 The 5-Agent Pipeline
-The core intelligence of TezAds is the `AgentWorkflowController`, which sequences five distinct AI personas operating sequentially:
+The core intelligence of TezAds is the `AgentWorkflowController`, which sequences five distinct AI personas operating sequentially. Each agent passes its structured output as context to the next agent:
 
-1. ☁️ **Data Ingestion Agent**: Parses raw CSV telemetry, sanitizes formats, and standardizes unstructured user inputs.
-2. 🔍 **Diagnostic AI**: Detects anomalies (e.g., Regional CPC spikes) and isolates the root causes using the Gemini API.
-3. 🧠 **Strategy Planner**: Formulates dynamic budget shifts, audience exclusion logic, and pacing constraints based on the diagnostics.
-4. ⚖️ **Safety & Compliance**: A crucial "If/Else" review loop. Validates the proposed strategy against daily spend velocity limits and platform safety policies.
-5. ⚙️ **Execution Bridge**: Generates the final, structured JSON payload that perfectly mimics a Meta Ads Manager API push, deployed directly to the Action Hub UI.
+1. ☁️ **Data Ingestion Agent**: Parses raw CSV telemetry, sanitizes numeric formats, drops null rows, and normalizes unstructured user prompts into a structured schema.
+2. 🔍 **Diagnostic AI (Gemini Flash)**: Ingests the sanitized data and detects anomalies (e.g., Regional CPC spikes). It utilizes contrastive reasoning to isolate the root cause.
+3. 🧠 **Strategy Planner (Gemini Flash)**: Ingests the Diagnostic report. Formulates tactical, multi-variable adjustments such as dynamic budget shifting, audience geo-exclusions, and pacing constraints.
+4. ⚖️ **Safety & Compliance (Deterministic)**: A crucial "If/Else" boundary layer. Validates the proposed strategy against hardcoded daily spend velocity limits and platform safety policies. Prevents LLM hallucinations from executing destructive ad bids.
+5. ⚙️ **Execution Bridge**: The final compiler. It forces the abstract plan to collapse into a strictly formatted JSON payload (mimicking the Meta Graph API schema) and deploys it directly to the Action Hub blueprint UI.
 
 ---
 
 ## 🔌 Integrations & APIs (Mock vs Real)
 
 ### 1. Real AI Integration (Google Gemini API)
-*   **Implementation**: Integrated via the `google_generative_ai` Flutter SDK.
-*   **Usage**: Drives the core reasoning engines of the Diagnostic and Strategy Planner agents.
-*   **Hackathon Safety Net**: We built a custom caching interceptor. If the free-tier Gemini API hits a `429 Rate Limit` during a live demo, the app seamlessly catches the exception and serves a cached, high-fidelity mock JSON trace, ensuring the UI/UX never breaks on stage.
+*   **Implementation**: Fully integrated via the native `google_generative_ai` Flutter SDK.
+*   **Configuration**: We deploy the `gemini-flash-latest` model for its ultra-low latency, which is critical for real-time chat interactions.
+*   **Hackathon Safety Net (The Sandbox Interceptor)**: We built a robust, custom caching interceptor. If the free-tier Gemini API hits a `429 Too Many Requests` or `Quota Exceeded` limit during a high-stakes live demo, the Riverpod controller seamlessly catches the `GenerativeAIException` and serves a pre-compiled, high-fidelity mock JSON trace. This guarantees 100% presentation uptime.
 
-### 2. Mock Integrations (Meta Ads Manager / Local Storage)
-*   **Data Ingestion**: Instead of pulling live Meta API data (which requires complex OAuth approval), we feed the system pre-bundled, highly realistic CSV datasets (`assets/samples/regional_retail_drops.csv`).
-*   **Execution Hub**: The final "Deploy" step updates the local Hive NoSQL database instead of making a live `POST` to the Meta Graph API, satisfying the hackathon sandbox requirements.
+### 2. Mock Integrations (Meta Ads Manager Sandbox)
+*   **Mock Ingestion**: Instead of pulling live Meta API data (which requires complex, slow OAuth approvals), we feed the system pre-bundled, highly realistic CSV telemetry (`assets/samples/regional_retail_drops.csv`).
+*   **Mock Execution Hub**: The final "Deploy to Ads Manager" action updates the local Hive NoSQL database instead of making a live `POST` to the Meta Graph API. This satisfies the hackathon constraints while perfectly demonstrating the data flow.
 
 ---
 

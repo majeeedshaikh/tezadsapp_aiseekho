@@ -1,54 +1,70 @@
 # TezAds: Autonomous Growth Operator 🚀
 
-TezAds is an autonomous, agentic mobile application designed to revolutionize Meta Ads optimization. Built natively in Flutter and powered by **Google Gemini API**, TezAds acts as an autonomous growth marketer in your pocket. 
+TezAds is an autonomous, agentic mobile application designed to revolutionize digital ad optimization. Built natively in Flutter and powered by the **Google Gemini API**, TezAds acts as an autonomous growth marketer in your pocket. 
 
-Submitted for the **AI Seekho Hackathon** (Challenge: Autonomous Content-to-Action Agent).
+Submitted for the **AI Seekho Hackathon** (Challenge 1: Autonomous Content-to-Action Agent).
 
 ---
 
 ## 🛑 The Problem We Are Solving
-
 Modern digital marketing is painfully manual. When anomalies occur (e.g., a massive spike in CPA in a specific region, or bidding collisions), human operators take hours or days to:
-1. Extract data from dashboards.
+1. Extract and analyze data from complex Meta/Google dashboards.
 2. Formulate a mitigation strategy.
-3. Verify compliance and budgets.
-4. Execute the changes in the Meta Ads Manager.
+3. Verify compliance and remaining budgets.
+4. Execute the technical changes in the Ads Manager.
 
-By the time the human reacts, thousands of dollars in ad spend have already been wasted. 
+By the time the human reacts, thousands of dollars in ad spend have already been wasted. **TezAds closes this gap to zero.**
 
-## 💡 Our Solution
-
-TezAds introduces a **Multi-Agent Orchestration Pipeline**. Instead of displaying static charts, TezAds allows users to chat with the system, attach raw telemetry (CSV/PDF), and deploy autonomous AI agents to handle the entire optimization lifecycle instantly.
-
----
-
-## ⚙️ Architecture & Technical Stack
-
-TezAds uses a **Zero-Backend Serverless Architecture** that runs entirely on the device:
-
-*   **Frontend**: Flutter (Dart) with a highly premium, glowing glassmorphic "Apple-level" UI design.
-*   **State Management**: Riverpod (`flutter_riverpod`) & GoRouter for seamless asynchronous execution.
-*   **Local Reactive DB**: Hive NoSQL for instant UI state changes and Hackathon-safe data caching.
-*   **AI Engine**: Google AI Studio / Gemini API directly bridged to the client using `google_generative_ai`.
-
-### The 5-Agent Pipeline
-Our core innovation is the `AgentWorkflowController`, which sequences five distinct AI personas:
-1. ☁️ **Data Ingestion**: Parses raw CSV telemetry and sanitizes formats.
-2. 🔍 **Diagnostic AI**: Detects anomalies (e.g., Regional CPC spikes) and isolates root causes.
-3. 🧠 **Strategy Planner**: Formulates dynamic budget shifts and pacing constraints.
-4. ⚖️ **Safety & Compliance**: A crucial "If/Else" review loop to validate the strategy against daily spend velocity limits and platform policies.
-5. ⚙️ **Execution Bridge**: Generates the final, structured JSON payload deployed directly to the Action Hub.
+## 💡 Overall Design of the Solution
+TezAds introduces a **Multi-Agent Orchestration Pipeline**. Instead of displaying static charts, TezAds allows users to:
+1. **Ingest Telemetry**: Upload raw ad performance data (CSV, PDF, JSON).
+2. **Chat & Diagnose**: Talk to the AI to define business goals or point out issues.
+3. **Deploy Autonomous Agents**: Let the AI handle the entire optimization lifecycle instantly.
+4. **Action & Verify**: View a split-screen blueprint of the AI's proposed changes before they are committed.
 
 ---
 
-## 🤖 How We Built This With Antigravity
+## ⚙️ Architectural Overview
+TezAds uses a **Zero-Backend Serverless Architecture** that runs entirely on the device.
 
+*   **Frontend UI/UX**: Flutter (Dart) utilizing a highly premium, glowing glassmorphic "Apple-level" aesthetic. Uses `BackdropFilter` for frosted glass elements and custom radial glow physics.
+*   **State Management**: `flutter_riverpod` combined with `GoRouter`. This ensures that complex asynchronous agent streams trigger isolated UI re-renders without blocking the user.
+*   **Local Reactive Database (Hive)**: Uses `hive_flutter` as a lightweight NoSQL store to cache agent states, campaign metrics, and user preferences. Provides instant reactive state updates.
+*   **Concurrency**: Uses **Flutter Isolates** to parse large CSV mock datasets in background threads, ensuring the 60fps/120fps UI never drops a frame.
+
+---
+
+## 🤖 The 5-Agent Pipeline
+The core intelligence of TezAds is the `AgentWorkflowController`, which sequences five distinct AI personas operating sequentially:
+
+1. ☁️ **Data Ingestion Agent**: Parses raw CSV telemetry, sanitizes formats, and standardizes unstructured user inputs.
+2. 🔍 **Diagnostic AI**: Detects anomalies (e.g., Regional CPC spikes) and isolates the root causes using the Gemini API.
+3. 🧠 **Strategy Planner**: Formulates dynamic budget shifts, audience exclusion logic, and pacing constraints based on the diagnostics.
+4. ⚖️ **Safety & Compliance**: A crucial "If/Else" review loop. Validates the proposed strategy against daily spend velocity limits and platform safety policies.
+5. ⚙️ **Execution Bridge**: Generates the final, structured JSON payload that perfectly mimics a Meta Ads Manager API push, deployed directly to the Action Hub UI.
+
+---
+
+## 🔌 Integrations & APIs (Mock vs Real)
+
+### 1. Real AI Integration (Google Gemini API)
+*   **Implementation**: Integrated via the `google_generative_ai` Flutter SDK.
+*   **Usage**: Drives the core reasoning engines of the Diagnostic and Strategy Planner agents.
+*   **Hackathon Safety Net**: We built a custom caching interceptor. If the free-tier Gemini API hits a `429 Rate Limit` during a live demo, the app seamlessly catches the exception and serves a cached, high-fidelity mock JSON trace, ensuring the UI/UX never breaks on stage.
+
+### 2. Mock Integrations (Meta Ads Manager / Local Storage)
+*   **Data Ingestion**: Instead of pulling live Meta API data (which requires complex OAuth approval), we feed the system pre-bundled, highly realistic CSV datasets (`assets/samples/regional_retail_drops.csv`).
+*   **Execution Hub**: The final "Deploy" step updates the local Hive NoSQL database instead of making a live `POST` to the Meta Graph API, satisfying the hackathon sandbox requirements.
+
+---
+
+## ✨ How We Built This With Antigravity (AI Vibe Coding)
 This application was architected, written, and continuously iterated in real-time alongside **Antigravity**, Google DeepMind's Advanced Agentic Coding Assistant. 
 
 We heavily utilized Antigravity for:
-*   **Complex UI/UX Engineering**: Antigravity generated the complex, animated UI components, including the dynamic auto-expanding Gemini-style textfield, the frosted glass Profile/Settings Modals, and the incredibly complex `AgentTraceScreen` featuring scaling glowing containers with real-time text-streaming animations.
-*   **Pipeline Orchestration**: Antigravity engineered the asynchronous `flutter_riverpod` state controller that perfectly synchronizes the 5-step agent execution, managing state between `isProcessing` and `isCompleted`.
-*   **Failsafe "Hackathon Demo" Layer**: Antigravity proactively implemented a bulletproof error-catching mechanism. By intercepting API rate limits from the free-tier Gemini API, it seamlessly falls back to a cached simulation, guaranteeing 100% reliability during live presentation pitches without breaking the user experience.
+*   **Complex UI/UX Engineering**: Generating the complex, animated UI components (dynamic Gemini-style textfields, frosted glass modals, scaling glowing containers).
+*   **Pipeline Orchestration**: Engineering the asynchronous `flutter_riverpod` state controller that perfectly synchronizes the 5-step agent execution.
+*   **Failsafe Sandbox Logic**: Implementing the bulletproof rate-limit caching mechanism that protects the live presentation pitches.
 
 ---
 
